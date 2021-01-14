@@ -46,7 +46,7 @@ module core_region
   parameter WAPUTYPE            = 3,
   parameter APU_NDSFLAGS_CPU    = 3,
   parameter APU_NUSFLAGS_CPU    = 5,
-  
+
   parameter FPU                 =  0,
   parameter FP_DIVSQRT          =  0,
   parameter SHARED_FP           =  0,
@@ -65,12 +65,12 @@ module core_region
   input logic [3:0]                      base_addr_i, // FOR CLUSTER VIRTUALIZATION
 
   input logic [5:0]                      cluster_id_i,
-  
+
   input logic                            irq_req_i,
   output logic                           irq_ack_o,
   input logic [4:0]                      irq_id_i,
   output logic [4:0]                     irq_ack_id_o,
-  
+
   input logic                            clock_en_i,
   input logic                            fetch_en_i,
   input logic                            fregfile_disable_i,
@@ -89,12 +89,12 @@ module core_region
   input logic                            instr_r_valid_i,
 
   input logic                            debug_req_i,
-              
+
               //XBAR_TCDM_BUS.Slave debug_bus,
   //output logic            debug_core_halted_o,
   //input logic             debug_core_halt_i,
   //input logic             debug_core_resume_i,
-              
+
   // Interface for DEMUX to TCDM INTERCONNECT ,PERIPHERAL INTERCONNECT and DMA CONTROLLER
   XBAR_TCDM_BUS.Master                   tcdm_data_master,
   //XBAR_TCDM_BUS.Master dma_ctrl_master,
@@ -136,7 +136,7 @@ module core_region
   input logic [31:0]                     apu_master_result_i,
   input logic [APU_NUSFLAGS_CPU-1:0]     apu_master_flags_i
 `endif
- 
+
 
 );
 
@@ -268,10 +268,10 @@ module core_region
 
         .ext_perf_counters_i   ( perf_counters         ),
         .fregfile_disable_i    ( 1'b1                  )   //disable FP regfile
-      ); 
+      );
     end else begin: CL_CORE
       assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
-      
+
       if (INSTR_RDATA_WIDTH == 128) begin
         instr_width_converter ibex_width_converter (
           .clk_i            ( clk_i              ),
@@ -296,7 +296,7 @@ module core_region
         assign core_instr_r_rdata = instr_r_rdata_i;
         assign core_instr_r_valid = instr_r_valid_i;
       end
-      
+
 `ifdef VERILATOR
       ibex_core #(
 `elsif TRACE_EXECUTION
@@ -304,20 +304,23 @@ module core_region
 `else
       ibex_core #(
 `endif
-        .PMPEnable                ( 1'b0              ),
-        .MHPMCounterNum           ( 10                ),
-        .MHPMCounterWidth         ( 40                ),
-        .RV32E                    ( CORE_TYPE_CL == 2 ),
-        .RV32M                    ( CORE_TYPE_CL == 1 ),
-        .RV32B                    ( 1'b0              ),
-        .BranchTargetALU          ( 1'b0              ),
-        .WritebackStage           ( 1'b0              ),
-        .MultiplierImplementation ( "fast"            ),
-        .ICache                   ( 1'b0              ),
-        .DbgTriggerEn             ( 1'b1              ),
-        .SecureIbex               ( 1'b0              ),
-        .DmHaltAddr               ( 32'h1A110800      ),
-        .DmExceptionAddr          ( 32'h1A110808      )
+        .SecureIbex               ( 1'b0                ),
+        .PMPEnable                ( 1'b0                ),
+        .PMPGranularity           ( 0                   ),
+        .PMPNumRegions            ( 4                   ),
+        .MHPMCounterNum           ( 10                  ),
+        .MHPMCounterWidth         ( 40                  ),
+        .RV32E                    ( CORE_TYPE_CL == 2   ),
+        .RV32M                    ( ibex_pkg::RV32MFast ), // TODO: set from top level
+        .RV32B                    ( ibex_pkg::RV32BNone ), // TODO: set from top level
+        .RegFile                  ( ibex_pkg::RegFileFF ), // TODO: set from top level
+        .BranchTargetALU          ( 1'b0                ),
+        .WritebackStage           ( 1'b0                ),
+        .ICache                   ( 1'b0                ),
+        .ICacheECC                ( 1'b0                ),
+        .DbgTriggerEn             ( 1'b1                ),
+        .DmHaltAddr               ( 32'h1A110800        ),
+        .DmExceptionAddr          ( 32'h1A110808        )
       ) IBEX_CORE (
         .clk_i                 ( clk_i              ),
         .rst_ni                ( rst_ni             ),
@@ -389,7 +392,7 @@ module core_region
   //********************************************************
   //****** DEMUX TO TCDM AND PERIPHERAL INTERCONNECT *******
   //********************************************************
-   
+
   // demuxes to TCDM & memory hierarchy
   core_demux #(
     .ADDR_WIDTH         ( 32                 ),
